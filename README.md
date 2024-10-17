@@ -17,9 +17,3 @@
 ## Screenshot
 
 ![image](https://github.com/user-attachments/assets/e6593956-0fdc-416a-a349-a08ad74069a5)
-
-## How to Use
-
-1. **Run the Application**:
-   ```bash
-   python easyocr_app.py

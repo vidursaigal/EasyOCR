@@ -11,9 +11,14 @@ import io
 
 # Additional imports for saving PDF and Word documents
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas as pdf_canvas
 from docx import Document
 
+# Additional imports for ReportLab's platypus module
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+# Uncomment these if you need to register a font that supports Unicode
+# from reportlab.pdfbase.ttfonts import TTFont
+# from reportlab.pdfbase import pdfmetrics
 
 class OCRApp(TkinterDnD.Tk):
     def __init__(self):
@@ -284,8 +289,12 @@ class OCRApp(TkinterDnD.Tk):
 
         if output_file:
             if output_file.lower().endswith('.txt'):
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    f.write(result_text)
+                try:
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        f.write(result_text)
+                    messagebox.showinfo("Success", "OCR results saved successfully!")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save TXT file: {str(e)}")
             elif output_file.lower().endswith('.pdf'):
                 self.save_as_pdf(output_file, result_text)
             elif output_file.lower().endswith('.docx'):
@@ -294,18 +303,43 @@ class OCRApp(TkinterDnD.Tk):
                 messagebox.showerror("Error", "Unsupported file format!")
                 return
 
-            messagebox.showinfo("Success", "OCR results saved successfully!")
-
     def save_as_pdf(self, output_file, text):
         try:
-            c = pdf_canvas.Canvas(output_file, pagesize=letter)
-            textobject = c.beginText(40, 750)
-            lines = text.split('\n')
-            for line in lines:
-                textobject.textLine(line)
-            c.drawText(textobject)
-            c.save()
+            # Uncomment and adjust the following lines if you need Unicode support
+            # Ensure the font file (e.g., 'DejaVuSans.ttf') is accessible
+            # from reportlab.pdfbase.ttfonts import TTFont
+            # from reportlab.pdfbase import pdfmetrics
+            # pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
+            # font_name = 'DejaVuSans'
+            font_name = 'Helvetica'  # Standard font; may not support all Unicode characters
+
+            # Create a SimpleDocTemplate object
+            doc = SimpleDocTemplate(output_file, pagesize=letter)
+
+            # Get the default style sheet and modify it if needed
+            styles = getSampleStyleSheet()
+            style = styles['Normal']
+            style.fontName = font_name
+            style.fontSize = 12
+            style.leading = 15  # Line height
+
+            # Split the text into paragraphs
+            story = []
+            paragraphs = text.strip().split('\n\n')  # Split on double newlines for paragraphs
+            for para_text in paragraphs:
+                # Replace single newlines with <br/> for line breaks within paragraphs
+                para_text = para_text.replace('\n', '<br/>')
+                para = Paragraph(para_text, style)
+                story.append(para)
+                story.append(Spacer(1, 12))  # Add space between paragraphs
+
+            # Build the PDF
+            doc.build(story)
+
+            # Notify the user of success
+            messagebox.showinfo("Success", "OCR results saved successfully!")
         except Exception as e:
+            print(f"Exception in save_as_pdf: {e}")  # For debugging purposes
             messagebox.showerror("Error", f"Failed to save PDF: {str(e)}")
 
     def save_as_word(self, output_file, text):
@@ -313,6 +347,8 @@ class OCRApp(TkinterDnD.Tk):
             doc = Document()
             doc.add_paragraph(text)
             doc.save(output_file)
+            # Notify the user of success
+            messagebox.showinfo("Success", "OCR results saved successfully!")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save Word document: {str(e)}")
 
